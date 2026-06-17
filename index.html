@@ -249,7 +249,7 @@
             padding: 0.8rem 1.2rem;
             border-radius: 12px;
             line-height: 1.5;
-            white-space: pre-wrap; /* Preserve AI linebreaks and formatting */
+            white-space: pre-wrap; 
         }
 
         .message.ai {
@@ -300,6 +300,12 @@
         }
 
         /* --- UPLOAD TAB --- */
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
         .upload-zone {
             border: 2px dashed var(--border-color);
             border-radius: 16px;
@@ -308,6 +314,7 @@
             background: rgba(255, 255, 255, 0.02);
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
         .upload-zone:hover {
@@ -319,6 +326,46 @@
             font-size: 3rem;
             color: var(--text-muted);
             margin-bottom: 1rem;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .vault-status {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .vault-list {
+            margin-top: 1rem;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .vault-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .vault-item span {
+            color: var(--accent-secondary);
         }
 
         /* --- DOWNLOADS TAB --- */
@@ -432,10 +479,21 @@
             <h2>Material Vault</h2>
             <p class="subtitle">Upload textbooks, PDFs, or notes to give your local AI specific context.</p>
             
-            <div class="upload-zone">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <h3>Drag & Drop Study Guides Here</h3>
-                <p style="color: var(--text-muted); margin-top: 0.5rem;">Supports .txt, .pdf, or .md files</p>
+            <div class="upload-container">
+                <div class="upload-zone">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <h3>Drag & Drop Study Guides Here</h3>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Click to browse or drop standard text files (.txt or .md)</p>
+                    <input type="file" id="filePayloadInput" accept=".txt,.md" onchange="handleFileProcessing(this)">
+                </div>
+
+                <div class="vault-status">
+                    <h3><i class="fa-solid fa-database"></i> Indexed Knowledge Base</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">These documents are cached safely in your active session and accessible by the AI.</p>
+                    <ul class="vault-list" id="vaultTrackingList">
+                        <li style="color: var(--text-muted);" id="emptyVaultNotice">No reference documents loaded yet. Your AI is using general global knowledge.</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -463,6 +521,9 @@
     </main>
 
     <script>
+        // Memory variables held in runtime memory context
+        let uploadedFileContentMap = {}; 
+
         // Simple Navigation System
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -473,7 +534,37 @@
             });
             
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        // File reader processing engine
+        function handleFileProcessing(inputElement) {
+            const uploadedFile = inputElement.files[0];
+            if (!uploadedFile) return;
+
+            const textFileReader = new FileReader();
+            textFileReader.onload = function(event) {
+                const textContents = event.target.result;
+                
+                // Track item internally
+                uploadedFileContentMap[uploadedFile.name] = textContents;
+                
+                // Update UI list view dynamically
+                const noticeElement = document.getElementById('emptyVaultNotice');
+                if (noticeElement) noticeElement.remove();
+
+                const listContainer = document.getElementById('vaultTrackingList');
+                const listRow = document.createElement('li');
+                listRow.className = 'vault-item';
+                listRow.innerHTML = `<div><i class="fa-solid fa-file-lines"></i> ${uploadedFile.name}</div> <span>Linked Successfully</span>`;
+                listContainer.appendChild(listRow);
+                
+                alert(`"${uploadedFile.name}" integrated! BrainBuddy's context database has expanded.`);
+            };
+            
+            textFileReader.readAsText(uploadedFile);
         }
 
         // Live API Communication System
@@ -487,7 +578,6 @@
             
             if (userText === "") return;
 
-            // Guard rails to make sure they put in an API key
             if (apiKey === "") {
                 alert("Hold on, Hero! You need to input your free Gemini API key in the top bar to initialize your study companion.");
                 return;
@@ -505,12 +595,22 @@
             // 2. Display "Thinking" Indicator
             const thinkingMsg = document.createElement('div');
             thinkingMsg.className = 'message ai';
-            thinkingMsg.innerText = "BrainBuddy is searching the scrolls...";
+            thinkingMsg.innerText = "...";
             messagesContainer.appendChild(thinkingMsg);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // 3. System Instructions to force the AI into an RPG Study Guide persona
-            const systemPrompt = "You are BrainBuddy, an enthusiastic, supportive RPG-themed study companion. The user is a Hero studying to level up. Treat their queries like quests, keep things concise, separate paragraphs cleanly, use gamer metaphors occasionally, and give them a short, 1-question mini-quiz at the end of every response to test them.";
+            // 3. System Instructions addressing Language Locks and Markdown asterisks bugs
+            const systemPrompt = "You are BrainBuddy, an enthusiastic, supportive RPG-themed study companion. The user is a Hero studying to level up. CRITICAL: Identify the language the user is speaking in and reply perfectly in that same language. NEVER include markdown asterisks symbols (like **) or code syntax tags for bolding or styling text anywhere in your response. Keep text raw, human, clean, and use normal paragraph spaces. Keep things concise, use casual gamer metaphors occasionally, and give them a short, 1-question mini-quiz at the end of every response to test them.";
+
+            // Assemble uploaded documents payload safely if present
+            let knowledgeContextInjection = "";
+            const activeDocuments = Object.keys(uploadedFileContentMap);
+            if (activeDocuments.length > 0) {
+                knowledgeContextInjection = "\n\n[CRITICAL KNOWLEDGE BASE DATA] Use the following uploaded documentation content to answer the user if relevant, but do not mention that you are extracting data from these files unless explicitly asked:\n";
+                activeDocuments.forEach(fileName => {
+                    knowledgeContextInjection += `--- START FILE: ${fileName} ---\n${uploadedFileContentMap[fileName]}\n--- END FILE ---\n`;
+                });
+            }
 
             try {
                 // 4. Send request to Google's live backend using the provided API key
@@ -523,7 +623,7 @@
                         contents: [
                             {
                                 parts: [
-                                    { text: `${systemPrompt}\n\nUser Query: ${userText}` }
+                                    { text: `${systemPrompt}${knowledgeContextInjection}\n\nUser Query: ${userText}` }
                                 ]
                             }
                         ]
@@ -532,13 +632,10 @@
 
                 const data = await response.json();
                 
-                // Parse out the text result safely
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     const aiResponseText = data.candidates[0].content.parts[0].text;
-                    // Replace indicator text with actual AI generation
                     thinkingMsg.innerText = aiResponseText;
                 } else {
-                    // Catch cases where the API key might be faulty or broken
                     thinkingMsg.innerText = "The brain matrix rejected that key. Check to make sure your API key is correct and valid!";
                 }
 
