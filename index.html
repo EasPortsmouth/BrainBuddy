@@ -89,7 +89,7 @@
 
         .xp-bar-fill {
             background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            width: 45%; /* Example progress */
+            width: 45%; 
             height: 100%;
             border-radius: 4px;
             transition: width 0.3s ease;
@@ -203,6 +203,38 @@
             max-height: 70vh;
         }
 
+        .api-config-banner {
+            background: rgba(15, 23, 42, 0.5);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .api-config-banner label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
+        .api-config-banner input {
+            flex-grow: 1;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .api-config-banner input:focus {
+            border-color: var(--accent-primary);
+        }
+
         .chat-messages {
             flex-grow: 1;
             padding: 1.5rem;
@@ -217,6 +249,7 @@
             padding: 0.8rem 1.2rem;
             border-radius: 12px;
             line-height: 1.5;
+            white-space: pre-wrap; /* Preserve AI linebreaks and formatting */
         }
 
         .message.ai {
@@ -376,9 +409,16 @@
             <p class="subtitle">Ask questions, request quizzes, or break down difficult topics.</p>
             
             <div class="chat-container">
+                <div class="api-config-banner">
+                    <label for="apiKeyField"><i class="fa-solid fa-key"></i> Gemini API Key:</label>
+                    <input type="password" id="apiKeyField" placeholder="Paste your free Google AI Studio key here...">
+                </div>
+
                 <div class="chat-messages" id="chatMessages">
                     <div class="message ai">
-                        Greetings, Hero! I am your BrainBuddy tutor. What topic are we conquering today? Send over a prompt, or drop a file in the Upload tab!
+                        Greetings, Hero! I am your BrainBuddy tutor. What topic are we conquering today? 
+                        
+                        ⚠️ Note: Please paste your free Gemini API Key into the top configuration bar so my brain cells can fire up!
                     </div>
                 </div>
                 <div class="chat-input-area">
@@ -423,52 +463,94 @@
     </main>
 
     <script>
-        // Simple Tab Switching logic
+        // Simple Navigation System
         function switchTab(tabId) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            // Remove active style from all navigation buttons
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // Show target tab
             document.getElementById(tabId).classList.add('active');
-            
-            // Add active style to clicked button
             event.currentTarget.classList.add('active');
         }
 
-        // Dummy send function to test out UI responsiveness
-        function sendMessage() {
+        // Live API Communication System
+        async function sendMessage() {
             const input = document.getElementById('chatInput');
+            const apiKeyInput = document.getElementById('apiKeyField');
             const messagesContainer = document.getElementById('chatMessages');
             
-            if (input.value.trim() !== "") {
-                // Add User Message
-                const userMsg = document.createElement('div');
-                userMsg.className = 'message user';
-                userMsg.innerText = input.value;
-                messagesContainer.appendChild(userMsg);
-                
-                const typedText = input.value;
-                input.value = "";
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
-                // Trigger a fake AI response placeholder delay
-                setTimeout(() => {
-                    const aiMsg = document.createElement('div');
-                    aiMsg.className = 'message ai';
-                    aiMsg.innerText = `Awesome query! When my AI brain connection is fully wired up via JavaScript, I will turn "${typedText}" into a gamified quest response!`;
-                    messagesContainer.appendChild(aiMsg);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 800);
+            const userText = input.value.trim();
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (userText === "") return;
+
+            // Guard rails to make sure they put in an API key
+            if (apiKey === "") {
+                alert("Hold on, Hero! You need to input your free Gemini API key in the top bar to initialize your study companion.");
+                return;
             }
+
+            // 1. Display User Message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.innerText = userText;
+            messagesContainer.appendChild(userMsg);
+            
+            input.value = "";
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 2. Display "Thinking" Indicator
+            const thinkingMsg = document.createElement('div');
+            thinkingMsg.className = 'message ai';
+            thinkingMsg.innerText = "BrainBuddy is searching the scrolls...";
+            messagesContainer.appendChild(thinkingMsg);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 3. System Instructions to force the AI into an RPG Study Guide persona
+            const systemPrompt = "You are BrainBuddy, an enthusiastic, supportive RPG-themed study companion. The user is a Hero studying to level up. Treat their queries like quests, keep things concise, separate paragraphs cleanly, use gamer metaphors occasionally, and give them a short, 1-question mini-quiz at the end of every response to test them.";
+
+            try {
+                // 4. Send request to Google's live backend using the provided API key
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    { text: `${systemPrompt}\n\nUser Query: ${userText}` }
+                                ]
+                            }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Parse out the text result safely
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const aiResponseText = data.candidates[0].content.parts[0].text;
+                    // Replace indicator text with actual AI generation
+                    thinkingMsg.innerText = aiResponseText;
+                } else {
+                    // Catch cases where the API key might be faulty or broken
+                    thinkingMsg.innerText = "The brain matrix rejected that key. Check to make sure your API key is correct and valid!";
+                }
+
+            } catch (error) {
+                console.error("API Call Failed:", error);
+                thinkingMsg.innerText = "An unexpected error occurred while channeling the AI spirits. Verify your internet connection.";
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Allow 'Enter' key to send message
+        // Fire request on Enter key press
         document.getElementById('chatInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 sendMessage();
