@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BrainBuddy - Mathematics Nexus</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght Peak@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
             --bg-dark: #090d16;
-            --panel-bg: rgba(17, 24, 39, 0.6);
+            --panel-bg: rgba(17, 24, 39, 0.55);
+            --sidebar-bg: rgba(3, 7, 18, 0.85);
             --accent-primary: #4f46e5;
             --accent-secondary: #06b6d4;
             --accent-danger: #f43f5e;
+            --accent-success: #10b981;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: rgba(255, 255, 255, 0.08);
@@ -31,15 +33,108 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
-        /* --- SURVEY SCREEN OVERLAY --- */
+        /* --- SIDEBAR SESSIONS MANAGEMENT --- */
+        aside {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1.25rem;
+            z-index: 10;
+            backdrop-filter: blur(20px);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--text-main); }
+
+        .session-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+        }
+
+        .session-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0.9rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .session-item:hover, .session-item.active {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+        }
+        .session-item.active {
+            background: rgba(6, 182, 212, 0.06);
+            border-color: rgba(6, 182, 212, 0.2);
+            border-left: 3px solid var(--accent-secondary);
+        }
+
+        .delete-session-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.2s;
+        }
+        .session-item:hover .delete-session-btn { opacity: 1; }
+        .delete-session-btn:hover { color: var(--accent-danger); }
+
+        .new-deck-btn {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .new-deck-btn:hover { background: var(--accent-primary); }
+
+        /* --- DIAGNOSTIC INITIALIZATION SCREEN --- */
         #surveyOverlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 8, 15, 0.95);
+            background: rgba(5, 8, 15, 0.96);
             backdrop-filter: blur(25px);
             z-index: 100;
             display: flex;
@@ -50,66 +145,69 @@
         }
 
         .survey-card {
-            background: rgba(17, 24, 39, 0.7);
+            background: rgba(17, 24, 39, 0.75);
             border: 1px solid var(--border-color);
             border-radius: 24px;
             padding: 2.5rem;
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
+        .survey-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
         .survey-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--accent-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        input, select {
+        input, select, textarea {
             background: rgba(3, 7, 18, 0.6);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 0.8rem 1rem;
+            padding: 0.75rem 1rem;
             color: var(--text-main);
             outline: none;
             font-size: 0.95rem;
             transition: border-color 0.2s;
         }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-primary); }
 
-        input:focus, select:focus {
-            border-color: var(--accent-primary);
+        .tip-box {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
         }
+        .tip-box a { color: var(--accent-secondary); text-decoration: none; font-weight: 600; }
+        .tip-box a:hover { text-decoration: underline; }
 
-        .start-btn {
-            background: linear-gradient(135deg, var(--accent-primary), #3b82f6);
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 1rem;
-            transition: opacity 0.2s;
-        }
-
-        .start-btn:hover { opacity: 0.9; }
-
-        /* --- MAIN WORKSPACE GRID --- */
-        .workspace {
+        /* --- ADVANCED WORKSPACE INTERFACE --- */
+        .main-workspace {
+            flex-grow: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            flex-grow: 1;
-            height: 100vh;
             padding: 1.5rem;
             gap: 1.5rem;
+            height: 100vh;
         }
 
         .panel {
@@ -133,14 +231,37 @@
         }
 
         .panel-header h3 {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        /* --- TUTOR INTERFACE --- */
+        /* --- PROGRESS SUB-TRACK SYSTEM --- */
+        .progress-sub-track {
+            padding: 0.75rem 1.5rem;
+            background: rgba(3, 7, 18, 0.2);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- INSTRUCTOR DISCUSSION CHAT STREAM --- */
         .tutor-stream {
             flex-grow: 1;
             padding: 1.5rem;
@@ -156,58 +277,19 @@
             line-height: 1.6;
             font-size: 0.95rem;
             white-space: pre-wrap;
+            max-width: 85%;
         }
         .chat-block.system { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); align-self: flex-start; }
-        .chat-block.user { background: linear-gradient(135deg, var(--accent-primary), #3b82f6); align-self: flex-end; max-width: 80%; }
+        .chat-block.user { background: linear-gradient(135deg, var(--accent-primary), #3b82f6); align-self: flex-end; box-shadow: 0 4px 12px rgba(79,70,229,0.2); }
 
         .workspace-input-bar {
             border-top: 1px solid var(--border-color);
             padding: 1.25rem;
             display: flex;
             gap: 0.75rem;
+            background: rgba(3, 7, 18, 0.2);
         }
         .workspace-input-bar.hidden { display: none; }
-
-        .workspace-input-bar input { flex-grow: 1; }
-
-        .action-btn {
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            padding: 0 1.25rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        /* --- WHITEBOARD CANVAS --- */
-        .canvas-container {
-            flex-grow: 1;
-            position: relative;
-            background: #0d111a;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            cursor: crosshair;
-        }
-
-        .canvas-controls {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .canvas-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.4rem 0.75rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-        .canvas-btn:hover { background: rgba(255,255,255,0.1); }
 
         .loading-view {
             display: none;
@@ -216,60 +298,141 @@
             gap: 0.5rem;
             padding: 1.5rem;
             color: var(--text-muted);
+            font-size: 0.9rem;
         }
         .loading-view i { animation: spin 1s linear infinite; color: var(--accent-secondary); }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- SCRATCHPAD WHITEBOARD ENGINE --- */
+        .canvas-container { flex-grow: 1; position: relative; background: #0b0e14; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; }
+        
+        .canvas-controls { display: flex; gap: 0.4rem; align-items: center; }
+        .canvas-btn {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.45rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: all 0.2s;
+        }
+        .canvas-btn:hover, .canvas-btn.active { background: rgba(255,255,255,0.1); border-color: var(--accent-secondary); }
+        .canvas-btn.active { color: var(--accent-secondary); background: rgba(6, 182, 212, 0.05); }
+
+        /* --- EXAM SYSTEM LAYER HOOKS --- */
+        .exam-timer-banner {
+            display: none;
+            background: rgba(244, 63, 94, 0.1);
+            border-bottom: 1px solid rgba(244, 63, 94, 0.2);
+            padding: 0.6rem 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-danger);
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
 
+    <aside>
+        <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Hub Dashboard</a>
+        
+        <div class="session-section">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.05em; margin-bottom:0.5rem;">Math Environments</div>
+            <ul class="session-list" id="mathSessionList">
+                </ul>
+        </div>
+        
+        <button class="new-deck-btn" onclick="openNewDeckWizard()"><i class="fa-solid fa-plus"></i> Calibrate New Deck</button>
+    </aside>
+
     <div id="surveyOverlay">
         <div class="survey-card">
-            <h2 style="margin-bottom: 0.5rem; font-weight:700;"><i class="fa-solid fa-calculator" style="color:var(--accent-secondary);"></i> Math Deck Calibration</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Configure your academic parameters to allow the AI to scale equations to your exact track.</p>
+            <h2 style="margin-bottom: 0.4rem; font-weight:700;"><i class="fa-solid fa-calculator" style="color:var(--accent-secondary);"></i> Math Deck Calibration</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">Configure your academic configurations to compile an adaptive lesson deck sequence.</p>
             
             <div class="survey-group">
-                <label>Target Objective</label>
-                <select id="goalInput">
-                    <option value="Study comprehensive concept modules step-by-step">Comprehensive Study & Concept Walkthrough</option>
-                    <option value="Strictly practice intensive calculations and drills">Targeted Problem Practice & Drills</option>
-                </select>
+                <label>Deck Strategy Name</label>
+                <input type="text" id="deckNameInput" placeholder="e.g., Calculus Unit 2 Prep, Linear Geometry Study Group">
+            </div>
+
+            <div class="survey-grid-2">
+                <div class="survey-group">
+                    <label>Target Objective</label>
+                    <select id="goalInput">
+                        <option value="Study comprehensive concept modules step-by-step">Comprehensive Study & Concepts</option>
+                        <option value="Strictly practice intensive calculations and drills">Practice Problems & Drills</option>
+                    </select>
+                </div>
+                <div class="survey-group">
+                    <label>Target Exam Date</label>
+                    <input type="date" id="examDateInput">
+                </div>
+            </div>
+
+            <div class="survey-grid-2">
+                <div class="survey-group">
+                    <label>Current Comprehension Level</label>
+                    <select id="understandingInput">
+                        <option value="Complete Beginner (Need visual foundations)">Beginner (1-20%)</option>
+                        <option value="Intermediate / Shaky Foundations (Understand terms, stuck on proofs)">Intermediate (21-60%)</option>
+                        <option value="Advanced Practitioner (Need specialized complexity testing)">Advanced (61-100%)</option>
+                    </select>
+                </div>
+                <div class="survey-group">
+                    <label>Student Profile Age</label>
+                    <input type="number" id="ageInput" value="16" min="6" max="25">
+                </div>
             </div>
 
             <div class="survey-group">
-                <label>Target Target Exam Date</label>
-                <input type="date" id="examDateInput">
-            </div>
-
-            <div class="survey-group">
-                <label>Current Comprehension Level</label>
-                <select id="understandingInput">
-                    <option value="Complete Beginner (Need visual foundations)">Complete Beginner (1-20%)</option>
-                    <option value="Vaguely Familiar (Understand core terms, stuck on proofs)">Intermediate / Shaky Foundations (21-60%)</option>
-                    <option value="Advanced Practitioner (Need specialized complexity testing)">Advanced (61-100%)</option>
-                </select>
-            </div>
-
-            <div class="survey-group">
-                <label>Core Topic Scope</label>
+                <label>Core Topic Scope & Focus Parameters</label>
                 <input type="text" id="topicInput" placeholder="e.g., Quadratic Equations, Derivatives, Geometry proofs...">
             </div>
 
             <div class="survey-group">
-                <label>Student Profile Age</label>
-                <input type="number" id="ageInput" value="16" min="8" max="25">
+                <label>Inject Manual Documentation Reference File (.txt / .md)</label>
+                <input type="file" id="surveyFileInput" accept=".txt,.md">
             </div>
 
-            <button class="start-btn" onclick="initializeCalibratedMathEngine()">Synthesize Workspace</button>
+            <div class="tip-box">
+                <i class="fa-solid fa-circle-info" style="color:var(--accent-secondary);"></i> <strong>Math Deck Tip:</strong> Have textbook images or problem sheets? Use Google Lens on your device to instantly scan image text, or process files through a secure data pipeline like <a href="https://cloudconvert.com/pdf-to-txt" target="_blank">CloudConvert PDF to TXT</a> to paste contents directly into files.
+            </div>
+
+            <div class="survey-group" id="fallbackKeyGroup">
+                <label>Gemini API Backup Key Connection</label>
+                <input type="password" id="fallbackApiKeyField" placeholder="Paste key here if main chat window config is empty...">
+            </div>
+
+            <button class="start-btn" onclick="commitCalibrationProfile()">Synthesize Workspace</button>
         </div>
     </div>
 
-    <div class="workspace">
+    <div class="main-workspace">
         
         <div class="panel">
             <div class="panel-header">
-                <h3><i class="fa-solid fa-brain" style="color:var(--accent-primary);"></i> Calibrated AI Instructor</h3>
-                <span id="timeTracker" style="font-size:0.85rem; color:var(--text-muted);"></span>
+                <h3 id="activeDeckTitle"><i class="fa-solid fa-brain" style="color:var(--accent-primary);"></i> Math Deck Workspace</h3>
+                <span id="countdownDisplay" style="font-size:0.82rem; color:var(--text-muted); font-weight:600;"></span>
+            </div>
+
+            <div class="exam-timer-banner" id="examTimerArea">
+                <span><i class="fa-solid fa-hourglass-half"></i> SIMULATED TESTING CYCLE RUNNING</span>
+                <span id="examCountdownClock">00:00</span>
+            </div>
+
+            <div class="progress-sub-track">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Comprehension Bar:</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressIndicator"></div>
+                </div>
+                <span id="progressText" style="font-size:0.8rem; font-weight:700; color:var(--accent-secondary);">0%</span>
             </div>
             
             <div class="tutor-stream" id="tutorStream">
@@ -280,7 +443,7 @@
             </div>
 
             <div class="workspace-input-bar" id="inputWrapper">
-                <input type="text" id="workspaceQuery" placeholder="Type your answer, formula calculation or question...">
+                <input type="text" id="workspaceQuery" placeholder="Type your answer, formula verification or workflow step...">
                 <button class="action-btn" onclick="submitTutorResponse()">Submit</button>
             </div>
         </div>
@@ -289,7 +452,9 @@
             <div class="panel-header">
                 <h3><i class="fa-solid fa-chalkboard" style="color:var(--accent-secondary);"></i> Scratchpad Whiteboard</h3>
                 <div class="canvas-controls">
-                    <button class="canvas-btn" onclick="clearScratchpad()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                    <button class="canvas-btn active" id="penBtn" onclick="activateCanvasMode('draw')"><i class="fa-solid fa-pen"></i> Pen</button>
+                    <button class="canvas-btn" id="eraserBtn" onclick="activateCanvasMode('erase')"><i class="fa-solid fa-eraser"></i> Eraser</button>
+                    <button class="canvas-btn" onclick="clearScratchpad()"><i class="fa-solid fa-trash-can"></i> Reset</button>
                 </div>
             </div>
             <div class="canvas-container">
@@ -300,18 +465,38 @@
     </div>
 
     <script>
-        let mathSessionHistory = [];
+        let mathSessions = {};
+        let currentActiveId = null;
         let canvas, ctx, drawing = false;
+        let brushMode = "draw"; // Options: "draw", "erase"
+        let fileTextPayload = "";
+
+        // Core Session State Parameters
+        let sessionUnderstandingProgress = 0;
+        let examTimeLimitSeconds = 1200; // 20 Mins baseline default fallback
+        let examTimerInterval = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             initCanvasEngine();
-            // Default exam date picker to 2 weeks out
+            loadMathCacheFromStorage();
+            setupDefaultDateWindow();
+            verifyGlobalKeyAvailability();
+        });
+
+        function setupDefaultDateWindow() {
             const targetDate = new Date();
             targetDate.setDate(targetDate.getDate() + 14);
             document.getElementById('examDateInput').value = targetDate.toISOString().split('T')[0];
-        });
+        }
 
-        // HTML5 Whiteboard Drawing Logic
+        function verifyGlobalKeyAvailability() {
+            const masterKey = localStorage.getItem('bb_api_key');
+            if (masterKey) {
+                document.getElementById('fallbackKeyGroup').style.display = 'none';
+            }
+        }
+
+        // HTML5 Whiteboard Engine Scripts
         function initCanvasEngine() {
             canvas = document.getElementById('scratchpad');
             ctx = canvas.getContext('2d');
@@ -320,22 +505,42 @@
                 const rect = canvas.parentElement.getBoundingClientRect();
                 canvas.width = rect.width;
                 canvas.height = rect.height;
-                ctx.strokeStyle = '#06b6d4';
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
+                setCanvasBrushProperties();
             }
             
             window.addEventListener('resize', resizeCanvas);
-            setTimeout(resizeCanvas, 100);
+            setTimeout(resizeCanvas, 150);
 
             canvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
             
-            // Touch support for tablets/stylus
             canvas.addEventListener('touchstart', (e) => { drawing = true; draw(e.touches[0]); });
             canvas.addEventListener('touchmove', (e) => { draw(e.touches[0]); e.preventDefault(); });
             canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
+        }
+
+        function setCanvasBrushProperties() {
+            if (brushMode === "draw") {
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 3;
+            } else {
+                ctx.strokeStyle = '#0b0e14'; // Matches target container background profile
+                ctx.lineWidth = 24;
+            }
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function activateCanvasMode(mode) {
+            brushMode = mode;
+            document.getElementById('penBtn').classList.remove('active');
+            document.getElementById('eraserBtn').classList.remove('active');
+            
+            if (mode === 'draw') document.getElementById('penBtn').classList.add('active');
+            if (mode === 'erase') document.getElementById('eraserBtn').classList.add('active');
+            
+            setCanvasBrushProperties();
         }
 
         function draw(e) {
@@ -351,68 +556,206 @@
         }
 
         function clearScratchpad() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0b0e14";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Calibrated AI Orchestration
-        async function initializeCalibratedMathEngine() {
+        // Local Storage File Pipeline Hooks
+        function loadMathCacheFromStorage() {
+            try {
+                const rawSessions = localStorage.getItem('bb_math_decks');
+                const rawActiveId = localStorage.getItem('bb_math_active_id');
+                
+                if (rawSessions) {
+                    mathSessions = JSON.parse(rawSessions);
+                    renderSessionsSidebarList();
+                }
+                
+                if (rawActiveId && mathSessions[rawActiveId]) {
+                    loadActiveMathDeckInstance(rawActiveId);
+                } else {
+                    document.getElementById('surveyOverlay').style.display = 'flex';
+                }
+            } catch (err) {
+                console.error("Storage structural reset verified.", err);
+                mathSessions = {};
+            }
+        }
+
+        function syncMathDecksToDisk() {
+            localStorage.setItem('bb_math_decks', JSON.stringify(mathSessions));
+            localStorage.setItem('bb_math_active_id', currentActiveId);
+        }
+
+        function openNewDeckWizard() {
+            document.getElementById('deckNameInput').value = "";
+            document.getElementById('topicInput').value = "";
+            document.getElementById('surveyFileInput').value = "";
+            document.getElementById('surveyOverlay').style.display = 'flex';
+        }
+
+        // Context Setup Orchestration
+        function commitCalibrationProfile() {
+            const name = document.getElementById('deckNameInput').value.trim() || "Math Log Session";
             const goal = document.getElementById('goalInput').value;
             const examDate = document.getElementById('examDateInput').value;
-            const contextLevel = document.getElementById('understandingInput').value;
-            const topic = document.getElementById('topicInput').value.trim() || "General Mathematics";
+            const conceptLevel = document.getElementById('understandingInput').value;
+            const topic = document.getElementById('topicInput').value.trim() || "General Arithmetic Formulas";
             const age = document.getElementById('ageInput').value;
+            
+            // Backup connection string validation checks
+            const fallbackKey = document.getElementById('fallbackApiKeyField').value.trim();
+            if (fallbackKey && !localStorage.getItem('bb_api_key')) {
+                localStorage.setItem('bb_api_key', fallbackKey);
+            }
 
             if (!localStorage.getItem('bb_api_key')) {
-                alert("Please initialize your Gemini API key in the AI Tutor Chat panel first.");
+                alert("An active Gemini API key configuration could not be validated. Please input a communication key token.");
                 return;
             }
 
-            // Calculate countdown timeline metrics cleanly
-            const daysLeft = Math.ceil((new Date(examDate) - new Date()) / (1000 * 60 * 60 * 24));
-            document.getElementById('timeTracker').innerText = `${daysLeft > 0 ? daysLeft : 0} Days until target exam date`;
-            document.getElementById('surveyOverlay').style.display = 'none';
+            const daysRemaining = Math.ceil((new Date(examDate) - new Date()) / (1000 * 60 * 60 * 24));
+            const generatedId = "math_deck_" + Date.now();
 
-            // Establish the structural tailored baseline directive
-            const initialDirective = `You are a calibrated structural math tutor configured for an age ${age} student. 
-            Objective parameter: ${goal}. Time constraints: ${daysLeft} days until exam evaluation. 
-            Student context rating: ${contextLevel}. Target topic scope: ${topic}.
+            const masterDirectiveText = `You are a calibrated procedural mathematics instructor tracking an age ${age} student profile.
+            Goal: ${goal}. Exam window timeline metric: ${daysRemaining} days remaining countdown.
+            Initial student confidence tier: ${conceptLevel}. Subject material scope: ${topic}.
+            
+            OPERATIONAL LAWS:
+            1. Deliver core concepts tailored directly to age ${age} limits without using structural bolding markdown metrics (never include ** or * indicators). Present workflows via explicit text layouts and paragraph spacing linebreaks.
+            2. Incrementally track user comprehension progress using the explicit tracking flag injection macro string at the top of your responses: "PROGRESS_UPDATE: [Number between 1 and 100]". Gradually advance this number as they show structural work step by step.
+            3. CRITICAL: Process matters over pure final scalar values. Do not accept a raw single final numerical solution. If the user posts an answer block without calculations, generate a courteous tracking prompt requesting step-by-step logic proofs.
+            4. If the user fails to understand a problem layer, rewrite the baseline parameters cleanly, change context structures, and post a similarly configured tracking problem later in the verification log to ensure long-term stability.
+            5. When progress reaches 100%, execute a global summary outline review, then declare a simulated timed exam block via tag declaration: "[TRIGGER_EXAM_TIMED_MINUTES: 20]". Follow that with a comprehensive set of testing questions. Wait for the comprehensive exam block submission. Then score it with an explicit percentage breakdown metrics grid block and request optional text feedback tracks.`;
 
-            CRITICAL STRUCTURAL PROTOCOLS:
-            1. Formulate a tailored explanation suited perfectly for a student who is ${age} years old.
-            2. Never generate character tags or asterisk tags (like ** or *). Keep equations cleanly formatted without tags. Use plain text layout breaks.
-            3. Present information step-by-step. Provide one explanation block and follow it with exactly one interactive practice multiple choice or structured mathematical problem for the user to solve.
-            4. Wait for the user's response before moving to the next topic module or diagnostic level.`;
+            // Setup new structural object entry mapping
+            mathSessions[generatedId] = {
+                title: name,
+                daysLeft: daysRemaining > 0 ? daysRemaining : 0,
+                progress: 0,
+                history: [
+                    {
+                        role: 'user',
+                        parts: [{ text: `${masterDirectiveText}\n\nSystem Command: Initiate the tailored math course workflow now by generating our first concept overview block and tracking task problem.` }]
+                    }
+                ]
+            };
 
-            mathSessionHistory.push({
-                role: 'user',
-                parts: [{ text: `${initialDirective}\n\nSystem Command: Initiate the course plan now by explaining the first core mathematical sub-concept and providing our first problem.` }]
-            });
-
-            await queryMathCoreRelay();
+            const fileElement = document.getElementById('surveyFileInput');
+            if (fileElement.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mathSessions[generatedId].history[0].parts[0].text += `\n\n[SUPPLEMENTAL MANUAL DOCUMENTATION ENCLOSED]:\n${e.target.result}`;
+                    finalizeDeckSetupStep(generatedId);
+                };
+                reader.readAsText(fileElement.files[0]);
+            } else {
+                finalizeDeckSetupStep(generatedId);
+            }
         }
 
+        function finalizeDeckSetupStep(id) {
+            currentActiveId = id;
+            syncMathDecksToDisk();
+            renderSessionsSidebarList();
+            loadActiveMathDeckInstance(id);
+            document.getElementById('surveyOverlay').style.display = 'none';
+            queryMathCoreNetworkRelay();
+        }
+
+        function loadActiveMathDeckInstance(id) {
+            currentActiveId = id;
+            localStorage.setItem('bb_math_active_id', id);
+            
+            const currentDeck = mathSessions[id];
+            document.getElementById('activeDeckTitle').innerHTML = `<i class="fa-solid fa-calculator" style="color:var(--accent-secondary);"></i> ${currentDeck.title}`;
+            document.getElementById('countdownDisplay').innerText = `${currentDeck.daysLeft} Days to Evaluation`;
+            
+            sessionUnderstandingProgress = currentDeck.progress || 0;
+            updateProgressBarUI(sessionUnderstandingProgress);
+            
+            // Clear current message frames and build the historical stream logs visually
+            const stream = document.getElementById('tutorStream');
+            stream.innerHTML = "";
+            
+            currentDeck.history.forEach((msg, idx) => {
+                if (idx === 0) return; // Skip structural system directive logs
+                
+                // Scrub the operational tracking codes before outputting to UI
+                let visibleText = msg.parts[0].text;
+                visibleText = visibleText.replace(/PROGRESS_UPDATE:\s*\d+/g, '').trim();
+                
+                if (visibleText) {
+                    appendUiMessageBlock(visibleText, msg.role === 'user' ? 'user' : 'system');
+                }
+            });
+            
+            renderSessionsSidebarList();
+            clearScratchpad();
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        function renderSessionsSidebarList() {
+            const listContainer = document.getElementById('mathSessionList');
+            listContainer.innerHTML = "";
+            
+            Object.keys(mathSessions).forEach(id => {
+                const li = document.createElement('li');
+                li.className = `session-item ${id === currentActiveId ? 'active' : ''}`;
+                li.setAttribute('onclick', `loadActiveMathDeckInstance('${id}')`);
+                li.innerHTML = `
+                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;"><i class="fa-solid fa-layer-group" style="margin-right:0.4rem;"></i> ${mathSessions[id].title}</div>
+                    <button class="delete-session-btn" onclick="deleteMathDeckInstance('${id}', event)"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        function deleteMathDeckInstance(id, event) {
+            event.stopPropagation();
+            delete mathSessions[id];
+            
+            const keys = Object.keys(mathSessions);
+            if (keys.length === 0) {
+                currentActiveId = null;
+                syncMathDecksToDisk();
+                renderSessionsSidebarList();
+                document.getElementById('surveyOverlay').style.display = 'flex';
+            } else {
+                if (currentActiveId === id) currentActiveId = keys[0];
+                syncMathDecksToDisk();
+                loadMathCacheFromStorage();
+            }
+        }
+
+        function updateProgressBarUI(value) {
+            document.getElementById('progressIndicator').style.width = `${value}%`;
+            document.getElementById('progressText').innerText = `${value}%`;
+        }
+
+        // API Communications & Dialogue Orchestration
         async function submitTutorResponse() {
-            const inputField = document.getElementById('workspaceQuery');
-            const userText = inputField.value.trim();
-            if (userText === "") return;
+            const inputElement = document.getElementById('workspaceQuery');
+            const userText = inputElement.value.trim();
+            if (userText === "" || !currentActiveId) return;
 
-            // Append local UI element node
-            appendMessageBubble(userText, 'user');
-            inputField.value = "";
+            appendUiMessageBlock(userText, 'user');
+            inputElement.value = "";
 
-            mathSessionHistory.push({
+            mathSessions[currentActiveId].history.push({
                 role: 'user',
                 parts: [{ text: userText }]
             });
+            syncMathDecksToDisk();
 
-            await queryMathCoreRelay();
+            await queryMathCoreNetworkRelay();
         }
 
-        async function queryMathCoreRelay() {
+        async function queryMathCoreNetworkRelay() {
             const loader = document.getElementById('tutorLoader');
             const inputWrapper = document.getElementById('inputWrapper');
             const apiKey = localStorage.getItem('bb_api_key');
-
+            
             inputWrapper.classList.add('hidden');
             loader.style.display = 'flex';
 
@@ -420,24 +763,36 @@
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: mathSessionHistory })
+                    body: JSON.stringify({ contents: mathSessions[currentActiveId].history })
                 });
 
                 const data = await response.json();
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    const aiText = data.candidates[0].content.parts[0].text;
+                    let aiOutputText = data.candidates[0].content.parts[0].text;
                     
-                    appendMessageBubble(aiText, 'system');
-                    mathSessionHistory.push({
+                    // Track macro operations blocks internally immediately
+                    parseSystemProgressInjections(aiOutputText);
+                    parseExamTriggerInjections(aiOutputText);
+
+                    // Commit to history objects arrays
+                    mathSessions[currentActiveId].history.push({
                         role: 'model',
-                        parts: [{ text: aiText }]
+                        parts: [{ text: aiOutputText }]
                     });
+                    
+                    mathSessions[currentActiveId].progress = sessionUnderstandingProgress;
+                    syncMathDecksToDisk();
+
+                    // Strip tracking macros before writing text blocks to human viewport frame
+                    let scrubbedOutput = aiOutputText.replace(/PROGRESS_UPDATE:\s*\d+/g, '').replace(/\[TRIGGER_EXAM_TIMED_MINUTES:\s*\d+\]/g, '').trim();
+                    appendUiMessageBlock(scrubbedOutput, 'system');
+
                 } else {
-                    appendMessageBubble("System verification failure. Re-verify the active state of your key connection.", 'system');
+                    appendUiMessageBlock("The calculation core rejected response processing validations. Check structural constraints.", 'system');
                 }
             } catch (err) {
                 console.error(err);
-                appendMessageBubble("Network handshake trace broken. Re-verify connectivity paths.", 'system');
+                appendUiMessageBlock("Network layer tracking sync dropped. Re-verify connectivity channels.", 'system');
             }
 
             loader.style.display = 'none';
@@ -446,7 +801,52 @@
             stream.scrollTop = stream.scrollHeight;
         }
 
-        function appendMessageBubble(text, role) {
+        function parseSystemProgressInjections(text) {
+            const pattern = /PROGRESS_UPDATE:\s*(\d+)/i;
+            const match = text.match(pattern);
+            if (match && match[1]) {
+                const parsedVal = parseInt(match[1]);
+                if (!isNaN(parsedVal)) {
+                    sessionUnderstandingProgress = Math.min(parsedVal, 100);
+                    updateProgressBarUI(sessionUnderstandingProgress);
+                }
+            }
+        }
+
+        function parseExamTriggerInjections(text) {
+            const pattern = /\[TRIGGER_EXAM_TIMED_MINUTES:\s*(\d+)\]/i;
+            const match = text.match(pattern);
+            if (match && match[1]) {
+                const parsedMinutes = parseInt(match[1]);
+                if (!isNaN(parsedMinutes)) {
+                    triggerExamInterfaceTimerClock(parsedMinutes);
+                }
+            }
+        }
+
+        function triggerExamInterfaceTimerClock(minutes) {
+            clearInterval(examTimerInterval);
+            examTimeLimitSeconds = minutes * 60;
+            
+            const banner = document.getElementById('examTimerArea');
+            const clock = document.getElementById('examCountdownClock');
+            banner.style.display = 'flex';
+
+            examTimerInterval = setInterval(() => {
+                examTimeLimitSeconds--;
+                if (examTimeLimitSeconds <= 0) {
+                    clearInterval(examTimerInterval);
+                    clock.innerText = "TIME EXPIRED";
+                    appendUiMessageBlock("SYSTEM NOTICE: The allocated countdown duration limit has expired. Please type 'Submit Exam' into the primary workflow interface row.", 'system');
+                } else {
+                    const m = Math.floor(examTimeLimitSeconds / 60).toString().padStart(2, '0');
+                    const s = (examTimeLimitSeconds % 60).toString().padStart(2, '0');
+                    clock.innerText = `${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        function appendUiMessageBlock(text, role) {
             const stream = document.getElementById('tutorStream');
             const div = document.createElement('div');
             div.className = `chat-block ${role}`;
